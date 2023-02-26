@@ -3,38 +3,29 @@ import { useState, useEffect, useRef } from 'react';
 import './charList.scss';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 
 
 const CharList = (props) => {
 
+  const {loading, error, getAllCharacters} = useMarvelService();
+
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [newItemLoading, setNewItemLoading] = useState(false);
   const [offset, setOffset] = useState(210);
   const [charEnded, setCharEnded] = useState (false);
 
-
-  const marverService = new MarvelService();
-
   useEffect(() => {
-    onRequest();
+    onRequest(offset, true);
   }, []);
 
 
 
-  const onRequest = (offset) => {
-    onCharListLoading();
-    marverService
-      .getAllCharacters(offset)
-      .then(onCharsLoaded)
-      .catch(onError);
+  const onRequest = (offset, initial) => {
+    initial ? setNewItemLoading(false) : setNewItemLoading(true);
+    getAllCharacters(offset)
+      .then(onCharsLoaded);
   }
-
-  const onCharListLoading = () => {
-    setNewItemLoading(true);
-  };
 
   const onCharsLoaded = (newCharList) => {
     let ended = false;
@@ -51,20 +42,9 @@ const CharList = (props) => {
     // }))
 
     setData(data => [...data, ...newCharList] );
-    setLoading(false);
     setNewItemLoading(newItemLoading => false);
     setOffset(offset => offset + 9);
     setCharEnded(charEnded => ended);
-  };
-
-  const onError = () => {
-    // this.setState({
-    //   loading: false,
-    //   error: true,
-    // });
-
-    setLoading(false);
-    setError(true);
   };
 
   const itemsRefs = useRef([]);
@@ -128,7 +108,7 @@ const CharList = (props) => {
 
   const items = renderItems(data);
   const errorMessage = error ? <ErrorMessage /> : null;
-  const spinner = loading ? <Spinner /> : null;
+  const spinner = loading && !newItemLoading ? <Spinner /> : null;
 
   return (
     <div className="char__list">
